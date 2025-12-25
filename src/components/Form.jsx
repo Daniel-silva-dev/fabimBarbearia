@@ -9,34 +9,33 @@ const horariosDisponiveis = [
   "13:00",
   "14:00",
   "15:00",
-  "16:00"
+  "16:00",
 ];
 
 export default function Form({ onSubmit }) {
   const [nome, setNome] = useState("");
-  const [dia, setDia] = useState("");
   const [horario, setHorario] = useState("");
+  const [data, setData] = useState(""); // ✅ STATE DA DATA
 
   function handleSubmit(e) {
     e.preventDefault();
 
     const novoEvento = {
       nome,
-      dia,
-      horario
+      horario,
+      data, // ✅ ENVIANDO A DATA
     };
 
     onSubmit(novoEvento);
 
     setNome("");
-    setDia("");
     setHorario("");
+    setData("");
   }
 
   return (
     <div className="container">
       <form onSubmit={handleSubmit}>
-        
         <input
           type="text"
           placeholder="Nome"
@@ -47,9 +46,10 @@ export default function Form({ onSubmit }) {
 
         <input
           type="date"
-          value={dia}
-          onChange={(e) => setDia(e.target.value)}
-          min={new Date().toISOString().split("T")[0]}
+          value={data}
+          onChange={(e) => {
+            setData(e.target.value);
+          }}
           required
         />
 
@@ -69,7 +69,6 @@ export default function Form({ onSubmit }) {
         <button type="submit" className="btnSubmit">
           Adicionar
         </button>
-
       </form>
     </div>
   );

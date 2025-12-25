@@ -2,6 +2,7 @@
 import "../componentsStyle/header.css";
 
 export default function Header({ lista }) {
+
   return (
      <div className="banner">
       <p>Horarios agendados</p>
@@ -10,7 +11,7 @@ export default function Header({ lista }) {
           <li key={index} className="item">
             <span className="nome">{evento.nome}</span>
             <span className="hora">{evento.horario}</span>
-            <span className="hora">{evento.dia}</span>
+            <span className="hora">{evento.data}</span>
           </li>
         ))
          }
