@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { collection, addDoc, onSnapshot } from "firebase/firestore";
 
 import { db } from "./services/firebase";
-import { AuthProvider } from "./contexts/AuthContext"; // 👈 IMPORTANTE
+import { AuthProvider } from "./contexts/AuthContext";
 
 import Form from "./components/form";
 import Header from "./components/header";
@@ -30,28 +30,38 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+  // 🔥 CRIA EVENTO SEMPRE COMO ATIVO
   async function novoEvento(evento) {
-    const horarioJaExiste = lista.some(
+    const existe = lista.some(
       (item) =>
         item.data === evento.data &&
-        item.horario === evento.horario
+        item.horario === evento.horario &&
+        (item.status === "ativo" || item.status === "bloqueado")
     );
 
-    if (horarioJaExiste) {
-      alert("Esse horário já está ocupado nesse dia");
-      return;
-    }
+    if (existe) return false;
 
-    await addDoc(collection(db, "agendamentos"), evento);
+    await addDoc(collection(db, "agendamentos"), {
+      ...evento,
+      status: "ativo"
+    });
+
+    return true;
   }
 
+  // 🔥 BLOQUEIA HORÁRIOS APENAS SE ATIVO OU BLOQUEADO
   const horariosBloqueados = diaSelecionado
-    ? lista.filter((item) => item.data === diaSelecionado).map(i => i.horario)
+    ? lista
+        .filter(
+          (item) =>
+            item.data === diaSelecionado &&
+            (item.status === "ativo" || item.status === "bloqueado")
+        )
+        .map((item) => item.horario)
     : [];
 
-
   return (
-    <AuthProvider> {/* 🔐 ENVOLVE TUDO */}
+    <AuthProvider>
       <BrowserRouter>
         <Routes>
 
@@ -60,7 +70,7 @@ function App() {
             element={
               <>
                 <Header
-                  lista={lista.filter(item =>
+                  lista={lista.filter((item) =>
                     diaSelecionado ? item.data === diaSelecionado : true
                   )}
                 />

@@ -2,60 +2,107 @@ import { useEffect, useState } from "react";
 import {
   collection,
   onSnapshot,
-  deleteDoc,
   doc,
   query,
   orderBy,
-  getDocs
+  updateDoc,
+  getDocs,
+  addDoc
 } from "firebase/firestore";
 
 import { db } from "../services/firebase";
 import "./admin.css";
 
-
 export default function Admin() {
-  
   const [filtroData, setFiltroData] = useState("");
   const [mostrarPassados, setMostrarPassados] = useState(false);
   const [agendamentos, setAgendamentos] = useState([]);
+  const [filtroStatus, setFiltroStatus] = useState("");
+  const [dataBloqueio, setDataBloqueio] = useState("");
+  const [horarioBloqueio, setHorarioBloqueio] = useState("");
+  const [feedback, setFeedback] = useState({
+  tipo: "", // success | error | info
+  mensagem: ""
+});
 
-  function isPassado(data) {
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
+function mostrarFeedback(tipo, mensagem) {
+  setFeedback({ tipo, mensagem });
 
-  const dataItem = new Date(data + "T00:00:00");
-  return dataItem < hoje;
+  setTimeout(() => {
+    setFeedback({ tipo: "", mensagem: "" });
+  }, 2500);
 }
+async function bloquearHorario() {
+  if (!dataBloqueio || !horarioBloqueio) {
+    mostrarFeedback("error", "Selecione data e horário");
+    return;
+  }
 
-  
-  
-  async function limparDiasPassados() {
-  const confirmar = window.confirm(
-    "Deseja apagar todos os agendamentos de dias passados?"
-  );
-  if (!confirmar) return;
-
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-
-  const snapshot = await getDocs(collection(db, "agendamentos"));
-
-  snapshot.forEach(async (docSnap) => {
-    const data = docSnap.data().data;
-    if (!data) return;
-
-    const [ano, mes, dia] = data.split("-");
-    const dataItem = new Date(ano, mes - 1, dia);
-
-    if (dataItem < hoje) {
-      await deleteDoc(doc(db, "agendamentos", docSnap.id));
-    }
+  await addDoc(collection(db, "agendamentos"), {
+    nome: "HORÁRIO BLOQUEADO",
+    data: dataBloqueio,
+    horario: horarioBloqueio,
+    status: "bloqueado"
   });
 
-  alert("Agendamentos antigos removidos com sucesso.");
+  mostrarFeedback(
+    "success",
+    `Horário ${horarioBloqueio} bloqueado`
+  );
+
+  setDataBloqueio("");
+  setHorarioBloqueio("");
 }
 
 
+
+
+  function isPassado(data) {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const dataItem = new Date(data + "T00:00:00");
+    return dataItem < hoje;
+  }
+
+  // 🔥 ATUALIZA STATUS (NÃO DELETA)
+  async function atualizarStatus(id, status) {
+    const confirmar = window.confirm(
+      `Deseja alterar o status para "${status}"?`
+    );
+    if (!confirmar) return;
+
+    await updateDoc(doc(db, "agendamentos", id), { status });
+  }
+
+  // 🔥 FINALIZA AUTOMATICAMENTE DIAS PASSADOS
+  async function finalizarDiasPassados() {
+    const confirmar = window.confirm(
+      "Deseja marcar todos os agendamentos passados como finalizados?"
+    );
+    if (!confirmar) return;
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const snapshot = await getDocs(collection(db, "agendamentos"));
+
+    snapshot.forEach(async (docSnap) => {
+      const data = docSnap.data().data;
+      const status = docSnap.data().status;
+
+      if (!data || status === "finalizado") return;
+
+      const dataItem = new Date(data + "T00:00:00");
+
+      if (dataItem < hoje) {
+        await updateDoc(doc(db, "agendamentos", docSnap.id), {
+          status: "finalizado"
+        });
+      }
+    });
+
+    alert("Agendamentos passados finalizados com sucesso.");
+  }
 
   // 🔹 ESCUTA EM TEMPO REAL
   useEffect(() => {
@@ -76,24 +123,12 @@ export default function Admin() {
     return () => unsubscribe();
   }, []);
 
-  async function cancelarAgendamento(id) {
-    const confirmar = window.confirm(
-      "Tem certeza que deseja cancelar este agendamento?"
-    );
-    if (!confirmar) return;
-
-    await deleteDoc(doc(db, "agendamentos", id));
-  }
   const agendamentosFiltrados = agendamentos.filter((item) => {
-  // filtrar por data selecionada
-  if (filtroData && item.data !== filtroData) return false;
-
-  // esconder dias passados
-  if (!mostrarPassados && isPassado(item.data)) return false;
-
-  return true;
-});
-
+    if (filtroData && item.data !== filtroData) return false;
+    if (!mostrarPassados && isPassado(item.data)) return false;
+    if (filtroStatus && item.status !== filtroStatus) return false;
+    return true;
+  });
 
   const agendamentosPorDia = agendamentosFiltrados.reduce((acc, item) => {
     if (!acc[item.data]) acc[item.data] = [];
@@ -101,65 +136,141 @@ export default function Admin() {
     return acc;
   }, {});
 
-  
 
   return (
     <div className="admin-container">
+      {feedback.mensagem && (
+     <div className={`admin-feedback ${feedback.tipo}`}>
+      {feedback.mensagem}
+    </div>
+)}
+
+
+      <h1 className="admin-title">Painel de Administração</h1>
+
+      <div className="admin-filtros">
+        <input
+          type="date"
+          value={filtroData}
+          onChange={(e) => setFiltroData(e.target.value)}
+           className="admin-input"
+        />
+
+        <label className="admin-checkbox">
+          <input
+            type="checkbox"
+            checked={mostrarPassados}
+            onChange={(e) => setMostrarPassados(e.target.checked)}
+          />
+          <span className="checkmark"></span>
+          Mostrar dias passados
+        </label>
+
+
+        <select
+        value={filtroStatus}
+        onChange={(e) => setFiltroStatus(e.target.value)}
+        className="admin-select"
+      >
+        <option value="">Todos os status</option>
+        <option value="ativo">Ativo</option>
+        <option value="cancelado">Cancelado</option>
+        <option value="finalizado">Finalizado</option>
+        <option value="bloqueado">Bloqueado</option>
+      </select>
+
+      </div>
+
+      <button className="admin-clean-btn" onClick={finalizarDiasPassados}>
+        Finalizar dias passados
+      </button>
+
+                <p className="horariosBloqueados">Bloquear horarios</p>
+      <div className="admin-bloqueio">
+          <input
+            type="date"
+            value={dataBloqueio}
+            onChange={(e) => setDataBloqueio(e.target.value)}
+            className="admin-input"
+          />
+
+          <select
+            value={horarioBloqueio}
+            onChange={(e) => setHorarioBloqueio(e.target.value)}
+            className="admin-select"
+          >
+            <option value="">Horário</option>
+            <option value="08:00">08:00</option>
+            <option value="09:00">09:00</option>
+            <option value="10:00">10:00</option>
+            <option value="11:00">11:00</option>
+            <option value="13:00">13:00</option>
+            <option value="14:00">14:00</option>
+            <option value="15:00">15:00</option>
+            <option value="16:00">16:00</option>
+          </select>
+
+          <button className="admin-btn bloquear" onClick={bloquearHorario}>
+            Bloquear horário
+          </button>
+
+        </div>
+
 
       {Object.keys(agendamentosPorDia).length === 0 && (
         <p className="admin-empty">Nenhum agendamento encontrado.</p>
       )}
-     <h1 className="admin-title">Painel Admin</h1>
-
-        <div className="admin-filtros">
-          <input
-            type="date"
-            value={filtroData}
-            onChange={(e) => setFiltroData(e.target.value)}
-          />
-
-          <label className="admin-checkbox">
-            <input
-              type="checkbox"
-              checked={mostrarPassados}
-              onChange={(e) => setMostrarPassados(e.target.checked)}
-            />
-            Mostrar dias passados
-          </label>
-        </div>
-
-        {Object.keys(agendamentosPorDia).length === 0 && (
-  <p className="admin-empty">
-    Nenhum agendamento para os filtros selecionados.
-  </p>
-)}
-
-
-
-        <button className="admin-clean-btn" onClick={limparDiasPassados}>
-        Limpar dias passados
-        </button>
-
 
       {Object.entries(agendamentosPorDia).map(([data, itens]) => (
         <div key={data} className="admin-dia">
           <h2 className="admin-data">{data}</h2>
-          {
-            
-          }
+
           {itens.map((item) => (
-            <div key={item.id} className="admin-item">
-              <div className="admin-info">
+            <div key={item.id} className={`admin-item status-${item.status}`}>
+             <div className="admin-info">
                 <strong>{item.nome}</strong>
                 <span>{item.horario}</span>
+
+                <span className={`status-badge ${item.status}`}>
+                  {item.status}
+                </span>
               </div>
 
-              <button
-                className="admin-btn"
-                onClick={() => cancelarAgendamento(item.id)}
-              >
-                Cancelar
-              </button>
+
+              <div className="admin-actions">
+                {item.status === "ativo" && (
+                  <>
+                    <button
+                      className="admin-btn cancel"
+                      onClick={() =>
+                        atualizarStatus(item.id, "cancelado")
+                      }
+                    >
+                      Cancelar
+                    </button>
+
+                    <button
+                      className="admin-btn finish"
+                      onClick={() =>
+                        atualizarStatus(item.id, "finalizado")
+                      }
+                    >
+                      Finalizar
+                    </button>
+                  </>
+                )}
+
+                {item.status === "cancelado" && (
+                  <button
+                    className="admin-btn reativar"
+                    onClick={() =>
+                      atualizarStatus(item.id, "ativo")
+                    }
+                  >
+                    Reativar
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -167,4 +278,3 @@ export default function Admin() {
     </div>
   );
 }
-
