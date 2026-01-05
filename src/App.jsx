@@ -61,7 +61,7 @@ function App() {
 
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/fabimBarber">
         <Routes>
 
           <Route
