@@ -1,6 +1,7 @@
 import "../componentsStyle/header.css";
+import { SERVICOS } from "../config/servicos";
 
-export default function Header({ lista }) {
+export default function Header({ lista = [] }) {
 
   function gerarDias() {
     const hoje = new Date();
@@ -30,11 +31,14 @@ export default function Header({ lista }) {
 
   function filtrarPorDia(data) {
     return lista
-      .filter(item => item.data === data)
-      .sort((a, b) => a.horario.localeCompare(b.horario));
+      .filter(item =>
+        item.data === data &&
+        (item.status === "ativo" || item.status === "bloqueado")
+      )
+      .filter(item => item.inicioMinutos !== undefined)
+      .sort((a, b) => a.inicioMinutos - b.inicioMinutos);
   }
 
-  // 🔹 verifica se existe algum horário nos próximos 3 dias
   const existeAlgumHorario = dias.some(
     dia => filtrarPorDia(dia.data).length > 0
   );
@@ -59,12 +63,31 @@ export default function Header({ lista }) {
                 <p className="dia-vazio">Sem horários</p>
               ) : (
                 <ul className="lista">
-                  {eventosDoDia.map((evento, index) => (
-                    <li key={index} className="item">
-                      <span className="nome">{evento.nome}</span>
-                      <span className="hora">{evento.horario}</span>
-                    </li>
-                  ))}
+                  {eventosDoDia.map((evento) => {
+
+                    const nomesServicos = (evento.servicos || [])
+                      .map(key => SERVICOS[key]?.nome)
+                      .filter(Boolean)
+                      .join(" • ");
+
+                    return (
+                      <li key={evento.id} className="item">
+                        <div className="info">
+                          <span className="nome">{evento.nome}</span>
+
+                          {nomesServicos && (
+                            <span className="servicos">
+                              {nomesServicos}
+                            </span>
+                          )}
+                        </div>
+
+                        <span className="hora">
+                          {evento.inicio} - {evento.fim}
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>

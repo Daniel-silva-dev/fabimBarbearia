@@ -1,136 +1,182 @@
-.container {
-  width: 100%;
-  padding: 16px;
-  background-color: #111;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-
-.container input,
-.container select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #333;
-  border-radius: 6px;
-  background-color: #181818;
-  color: #fff;
-  outline: none;
-  font-size: 1rem;
-}
-
-.container input::placeholder {
-  color: #888;
-}
-
-.container input:focus,
-.container select:focus {
-  border-color: #555;
-}
-.erro {
-  color: #ff4d4d;
-  font-size: 0.9rem;
-}
-
-.container button {
-  width: 100%;
-  padding: 12px;
-  background-color: #fff;
-  color: #000;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: opacity 0.2s ease;
-}
-
-.container button:hover {
-  opacity: 0.85;
-  text-decoration: underline;
-}
 .form-container {
   display: flex;
   justify-content: center;
-  margin-top: 2rem;
+  padding: 40px 20px;
 }
 
 .form-box {
-  background: #111;
-  padding: 2rem;
-  border-radius: 12px;
   width: 100%;
-  max-width: 360px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
+  max-width: 500px;
+  background: #111;
+  padding: 30px;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  color: #fff;
 }
 
 .form-box h2 {
-  color: #fff;
   text-align: center;
+  margin-bottom: 25px;
+  font-weight: 600;
+  letter-spacing: 1px;
 }
 
-.form-box input,
-.form-box select {
-  padding: 10px;
-  border-radius: 6px;
-  border: none;
-}
+/* Inputs */
 
-.form-box button {
+.form-box input[type="text"],
+.form-box input[type="date"] {
+  width: 100%;
   padding: 12px;
-  border: none;
+  margin-bottom: 18px;
   border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  background: #25d366;
+  border: 1px solid #333;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 15px;
+  transition: 0.2s;
 }
 
-.btn-loading {
-  opacity: 0.7;
-  cursor: not-allowed;
+.form-box input:focus {
+  border-color: #00bcd4;
+  outline: none;
 }
+
+/* SERVIÇOS */
+
+.servicos-box {
+  margin-bottom: 25px;
+}
+
+.servicos-box p {
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+/* 🔥 CHECKBOXES ESTILIZADOS */
+
+.servico-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1a1a1a;
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  border: 1px solid #222;
+  transition: 0.2s;
+}
+
+.servico-item:hover {
+  border-color: #00bcd4;
+  background: #202020;
+}
+
+.servico-item input {
+  display: none;
+}
+
+.servico-item.checked {
+  border: 1px solid #00bcd4;
+  background: rgba(0, 188, 212, 0.1);
+}
+
+/* HORÁRIOS */
+
+.horarios-box {
+  margin-bottom: 25px;
+}
+
+.horarios-box p {
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.periodo-titulo {
+  margin: 18px 0 10px;
+  font-size: 14px;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* 🔥 GRID GRANDE */
+
+.horarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+/* 🔥 BOTÕES GRANDES */
+
+.horario-btn {
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid #333;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.horario-btn:hover {
+  border-color: #00bcd4;
+  background: #202020;
+}
+
+.horario-btn.ativo {
+  background: #00bcd4;
+  color: #000;
+  border: none;
+  font-weight: 600;
+  transform: scale(1.05);
+}
+
+/* BOTÃO FINAL */
+
+.form-box button[type="submit"] {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  background: #00bcd4;
+  color: #000;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.form-box button[type="submit"]:hover {
+  opacity: 0.9;
+  transform: scale(1.08);
+}
+
+/* ALERTAS */
 
 .form-erro {
-  color: #ff6b6b;
-  font-size: 0.9rem;
-  text-align: center;
+  background: #4a0000;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  font-size: 14px;
 }
 
 .form-sucesso {
-  color: #4cd964;
-  font-size: 0.9rem;
-  text-align: center;
+  background: #003d2e;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  font-size: 14px;
 }
-
-
-@media (min-width: 768px) {
-  .container {
-    max-width: 480px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-
-  .container input,
-  .container select {
-    font-size: 1.2rem;
-  }
-
-  .container button {
-    width: auto;
-    align-self: center;
-    padding: 12px 32px;
-  }
-}
-@media (min-width: 1024px) {
-  .container {
-    max-width: 520px;
-  }
-
-  .container input,
-  .container select {
-    font-size: 1.3rem;
-  }
+.horario-btn small {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 4px;
 }

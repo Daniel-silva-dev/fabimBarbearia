@@ -103,6 +103,31 @@
   color: #777;
   margin-top: 8px;
 }
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #1a1a1a;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+}
+
+.nome {
+  font-weight: 600;
+}
+
+.servicos {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
 
 
 
@@ -120,6 +145,9 @@
 @media (max-width: 480px) {
   .banner p {
     font-size: 1.5rem;
+  }
+  .banner {
+    min-height: 70vh;
   }
 
   .item {

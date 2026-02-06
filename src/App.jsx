@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -19,7 +19,9 @@ import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import PrivateRoute from "./routes/PrivateRoute";
 
-/* 🔁 Trata redirect do GitHub Pages (/admin direto na URL) */
+import { gerarHorariosDisponiveis } from "./utils/agendaEngine";
+
+/* 🔁 Trata redirect do GitHub Pages */
 function RedirectHandler() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,14 +33,13 @@ function RedirectHandler() {
     if (redirect) {
       navigate(redirect, { replace: true });
     }
-  }, []);
+  }, [navigate, location]);
 
   return null;
 }
 
 function App() {
   const [lista, setLista] = useState([]);
-  const [diaSelecionado, setDiaSelecionado] = useState("");
 
   /* 🔥 Escuta agendamentos em tempo real */
   useEffect(() => {
@@ -56,16 +57,38 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+  /* 🔧 Geração dinâmica de horários */
+  const obterHorarios = useCallback(
+    (data, duracao) => {
+      const agendamentosDoDia = lista.filter(
+        (item) =>
+          item.data === data &&
+          (item.status === "ativo" || item.status === "bloqueado")
+      );
+
+      return gerarHorariosDisponiveis({
+        data,
+        duracao,
+        agendamentos: agendamentosDoDia,
+        segundaFechada: false, // pode virar config depois
+      });
+    },
+    [lista]
+  );
+
   /* ➕ Criar novo agendamento */
   async function novoEvento(evento) {
-    const existe = lista.some(
+    const conflito = lista.some(
       (item) =>
         item.data === evento.data &&
-        item.horario === evento.horario &&
-        (item.status === "ativo" || item.status === "bloqueado")
+        item.status !== "cancelado" &&
+        !(
+          evento.fimMinutos <= item.inicioMinutos ||
+          evento.inicioMinutos >= item.fimMinutos
+        )
     );
 
-    if (existe) return false;
+    if (conflito) return false;
 
     await addDoc(collection(db, "agendamentos"), {
       ...evento,
@@ -75,51 +98,29 @@ function App() {
     return true;
   }
 
-  /* ⛔ Horários bloqueados por dia + status */
-  const horariosBloqueados = diaSelecionado
-    ? lista
-        .filter(
-          (item) =>
-            item.data === diaSelecionado &&
-            (item.status === "ativo" || item.status === "bloqueado")
-        )
-        .map((item) => item.horario)
-    : [];
-
   return (
     <AuthProvider>
       <BrowserRouter basename="/fabimBarber">
         <RedirectHandler />
 
         <Routes>
-          {/* 🏠 HOME */}
           <Route
             path="/"
             element={
               <>
                 <HeaderBar />
-                <Header
-                  lista={lista.filter((item) =>
-                    diaSelecionado ? item.data === diaSelecionado : true
-                  )}
-                />
-
+                <Header lista={lista} />
                 <Form
                   onSubmit={novoEvento}
-                  diaSelecionado={diaSelecionado}
-                  setDiaSelecionado={setDiaSelecionado}
-                  horariosBloqueados={horariosBloqueados}
+                  gerarHorarios={obterHorarios}
                 />
-
                 <Footer />
               </>
             }
           />
 
-          {/* 🔐 LOGIN */}
           <Route path="/login" element={<Login />} />
 
-          {/* 🛠 ADMIN (PROTEGIDO) */}
           <Route
             path="/admin"
             element={

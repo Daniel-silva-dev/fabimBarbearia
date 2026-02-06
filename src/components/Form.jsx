@@ -1,53 +1,51 @@
 import "../componentsStyle/form.css";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+//import { horaParaMinutos } from "../utils/time";
+import { SERVICOS } from "../config/servicos";
 
-const horariosDisponiveis = [
-  "08:00", "09:00", "10:00", "11:00",
-  "13:00", "14:00", "15:00", "16:00"
-];
-
-export default function Form({
-  onSubmit,
-  horariosBloqueados = [], 
-  setDiaSelecionado
-
-}) {
+export default function Form({ onSubmit, gerarHorarios }) {
   const [nome, setNome] = useState("");
-  const [horario, setHorario] = useState("");
   const [data, setData] = useState("");
+  const [horarioSelecionado, setHorarioSelecionado] = useState(null);
+  const [servicosSelecionados, setServicosSelecionados] = useState([]);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
   const [loading, setLoading] = useState(false);
 
-
-
-  function isDomingo(data) {
-    const diaSemana = new Date(data + "T00:00:00").getDay();
-    return diaSemana === 0;
+  function handleServicoChange(servico) {
+    setServicosSelecionados((prev) =>
+      prev.includes(servico)
+        ? prev.filter((s) => s !== servico)
+        : [...prev, servico]
+    );
   }
 
-  function isPassado(data) {
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
+  const duracaoTotal = useMemo(() => {
+    return servicosSelecionados.reduce((total, chave) => {
+      return total + (SERVICOS[chave]?.duracao || 0);
+    }, 0);
+  }, [servicosSelecionados]);
 
-    const dataItem = new Date(data + "T00:00:00");
-    return dataItem < hoje;
-  }
+  const horariosDisponiveis = useMemo(() => {
+    if (!data || duracaoTotal === 0) return [];
+    return gerarHorarios(data, duracaoTotal);
+  }, [data, duracaoTotal, gerarHorarios]);
+
+  const horariosManha = horariosDisponiveis.filter(
+    (h) => h.inicioMinutos < 12 * 60
+  );
+
+  const horariosTarde = horariosDisponiveis.filter(
+    (h) => h.inicioMinutos >= 14 * 60
+  );
 
   async function handleSubmit(e) {
     e.preventDefault();
     setErro("");
     setSucesso("");
 
-    if (!data || !horario) return;
-
-    if (isDomingo(data)) {
-      setErro("Não é possível agendar aos domingos.");
-      return;
-    }
-
-    if (isPassado(data)) {
-      setErro("Não é possível agendar em datas passadas.");
+    if (!nome || !data || !horarioSelecionado || servicosSelecionados.length === 0) {
+      setErro("Preencha todos os campos.");
       return;
     }
 
@@ -55,30 +53,61 @@ export default function Form({
 
     const ok = await onSubmit({
       nome,
-      horario,
       data,
-      status: "ativo" 
+      servicos: servicosSelecionados,
+      inicio: horarioSelecionado.inicio,
+      fim: horarioSelecionado.fim,
+      inicioMinutos: horarioSelecionado.inicioMinutos,
+      fimMinutos: horarioSelecionado.fimMinutos,
+      status: "ativo"
     });
 
     setLoading(false);
 
     if (ok === false) {
-      setErro("Horário indisponível para este dia.");
+      setErro("Esse horário não comporta os serviços selecionados.");
       return;
     }
 
     setNome("");
-    setHorario("");
     setData("");
+    setHorarioSelecionado(null);
+    setServicosSelecionados([]);
     setSucesso("Agendamento realizado com sucesso!");
-
     setTimeout(() => setSucesso(""), 3000);
+  }
+
+  function renderBloco(titulo, lista) {
+    if (lista.length === 0) return null;
+
+    return (
+      <>
+        <h3 className="periodo-titulo">{titulo}</h3>
+        <div className="horarios-grid">
+          {lista.map((h) => (
+          <button
+            type="button"
+            key={h.inicioMinutos}
+            className={`horario-btn ${
+              horarioSelecionado?.inicioMinutos === h.inicioMinutos
+                ? "ativo"
+                : ""
+            }`}
+            onClick={() => setHorarioSelecionado(h)}
+          >
+            <span>{h.inicio}</span>
+            <small>até {h.fim}</small>
+          </button>
+
+          ))}
+        </div>
+      </>
+    );
   }
 
   return (
     <div className="form-container">
       <form onSubmit={handleSubmit} className="form-box">
-
         <h2>Agendar horário</h2>
 
         {erro && <p className="form-erro">{erro}</p>}
@@ -97,44 +126,53 @@ export default function Form({
           value={data}
           onChange={(e) => {
             setData(e.target.value);
-            setDiaSelecionado(e.target.value); 
-            setHorario("");
+            setHorarioSelecionado(null);
           }}
           required
         />
 
+        <div className="servicos-box">
+          <p>Selecione os serviços:</p>
 
-        <select
-          value={horario}
-          onChange={(e) => setHorario(e.target.value)}
-          disabled={!data}
-          required
-        >
-          <option value="">Selecione o horário</option>
+          {Object.entries(SERVICOS).map(([key, servico]) => (
+          <label
+              key={key}
+              className={`servico-item ${
+                servicosSelecionados.includes(key) ? "checked" : ""
+              }`}
+            >
+              <span>
+                {servico.nome} ({servico.duracao} min)
+              </span>
 
-          {horariosDisponiveis.map((hora) => {
-            const ocupado = horariosBloqueados.includes(hora);
+              <input
+                type="checkbox"
+                checked={servicosSelecionados.includes(key)}
+                onChange={() => handleServicoChange(key)}
+              />
+            </label>
 
-            return (
-              <option
-                key={hora}
-                value={hora}
-                disabled={ocupado}
-              >
-                {hora} {ocupado ? "(ocupado)" : ""}
-              </option>
-            );
-          })}
-        </select>
+          ))}
+        </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className={loading ? "btn-loading" : ""}
-        >
+        <div className="horarios-box">
+          <p>Horários disponíveis:</p>
+
+          {!data || duracaoTotal === 0 ? (
+            <p className="horario-info">Selecione data e serviços</p>
+          ) : horariosDisponiveis.length === 0 ? (
+            <p className="horario-info">Nenhum horário disponível</p>
+          ) : (
+            <>
+              {renderBloco("Manhã", horariosManha)}
+              {renderBloco("Tarde", horariosTarde)}
+            </>
+          )}
+        </div>
+
+        <button type="submit" disabled={loading}>
           {loading ? "Salvando..." : "Agendar"}
         </button>
-
       </form>
     </div>
   );
