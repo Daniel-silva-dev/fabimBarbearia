@@ -24,14 +24,33 @@ export default function Admin() {
   const [agendamentos, setAgendamentos] = useState([]);
   const [mostrarPassados, setMostrarPassados] = useState(false);
   const [segundaOff, setSegundaOff] = useState(false);
-
   const [dataBloqueio, setDataBloqueio] = useState("");
   const [horarioBloqueio, setHorarioBloqueio] = useState("");
-
   const [feedback, setFeedback] = useState({
     tipo: "",
     mensagem: ""
   });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalAction, setModalAction] = useState(null);
+
+function confirmarAcao(mensagem, callback) {
+  setModalMessage(mensagem);
+  setModalAction(() => callback);
+  setModalOpen(true);
+}
+function confirmarModal() {
+  if (modalAction) {
+    modalAction();
+  }
+  setModalOpen(false);
+}
+
+function fecharModal() {
+  setModalOpen(false);
+}
+
+
 
   function mostrarFeedback(tipo, mensagem) {
     setFeedback({ tipo, mensagem });
@@ -294,14 +313,16 @@ function calcularFaturamento() {
           <span>Segunda-feira:</span>
           <button
             className={`admin-btn ${segundaOff ? "cancel" : "finish"}`}
-            onClick={toggleSegundaOff}
+            onClick={() => confirmarAcao("Tem certeza que deseja desativar a segunda-feira?", toggleSegundaOff)}
           >
             {segundaOff ? "OFF (Fechado)" : "ON (Aberto)"}
+
           </button>
         </div>
 
-        <button className="admin-clean-btn" onClick={finalizarDiasPassados}>
+        <button className="admin-clean-btn" onClick={() => confirmarAcao("Tem certeza que deseja finalizar os dias passados?", finalizarDiasPassados)}>
           Finalizar dias passados
+          
         </button>
       </div>
 
@@ -322,7 +343,7 @@ function calcularFaturamento() {
           className="admin-input"
         />
 
-        <button className="admin-btn bloquear" onClick={bloquearHorario}>
+        <button className="admin-btn bloquear"  onClick={() => confirmarAcao("Tem certeza que deseja bloquear este horário?", bloquearHorario)}>
           Bloquear 1 hora
         </button>
       </div>
@@ -378,14 +399,14 @@ function calcularFaturamento() {
                       <>
                         <button
                           className="admin-btn cancel"
-                          onClick={() => atualizarStatus(item.id, "cancelado")}
+                          onClick={() => confirmarAcao("Tem certeza que deseja cancelar este agendamento?", () => atualizarStatus(item.id, "cancelado"))}
                         >
                           Cancelar
                         </button>
 
                         <button
                           className="admin-btn finish"
-                          onClick={() => atualizarStatus(item.id, "finalizado")}
+                          onClick={() => confirmarAcao("Tem certeza que deseja finalizar este agendamento?", () => atualizarStatus(item.id, "finalizado"))}
                         >
                           Finalizar
                         </button>
@@ -395,7 +416,7 @@ function calcularFaturamento() {
                     {item.status === "cancelado" && (
                       <button
                         className="admin-btn reativar"
-                        onClick={() => atualizarStatus(item.id, "ativo")}
+                        onClick={() => confirmarAcao("Tem certeza que deseja reativar este agendamento?", () => atualizarStatus(item.id, "ativo"))}
                       >
                         Reativar
                       </button>
@@ -412,6 +433,30 @@ function calcularFaturamento() {
         <h2>Faturamento Mensal Atual</h2>
         <strong>R$ {faturamentoMensal.toFixed(2)}</strong>
       </div>
+      {modalOpen && (
+  <div className="admin-modal-overlay">
+    <div className="admin-modal">
+      <h3>Confirmar ação</h3>
+      <p>{modalMessage}</p>
+
+      <div className="admin-modal-actions">
+        <button
+          className="admin-btn cancel"
+          onClick={fecharModal}
+        >
+          Cancelar
+        </button>
+
+        <button
+          className="admin-btn finish"
+          onClick={confirmarModal}
+        >
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
     </div>
   );
