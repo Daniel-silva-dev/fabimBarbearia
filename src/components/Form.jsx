@@ -1,6 +1,5 @@
 import "../componentsStyle/form.css";
 import { useState, useMemo } from "react";
-//import { horaParaMinutos } from "../utils/time";
 import { SERVICOS } from "../config/servicos";
 
 export default function Form({ onSubmit, gerarHorarios }) {
@@ -8,9 +7,21 @@ export default function Form({ onSubmit, gerarHorarios }) {
   const [data, setData] = useState("");
   const [horarioSelecionado, setHorarioSelecionado] = useState(null);
   const [servicosSelecionados, setServicosSelecionados] = useState([]);
-  const [erro, setErro] = useState("");
-  const [sucesso, setSucesso] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // 🔔 NOVO ALERT VISUAL
+  const [alerta, setAlerta] = useState({
+    tipo: "", // success | error
+    mensagem: "",
+    visivel: false
+  });
+
+  function mostrarAlerta(tipo, mensagem) {
+    setAlerta({ tipo, mensagem, visivel: true });
+    setTimeout(() => {
+      setAlerta({ tipo: "", mensagem: "", visivel: false });
+    }, 3000);
+  }
 
   function handleServicoChange(servico) {
     setServicosSelecionados((prev) =>
@@ -41,11 +52,9 @@ export default function Form({ onSubmit, gerarHorarios }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setErro("");
-    setSucesso("");
 
     if (!nome || !data || !horarioSelecionado || servicosSelecionados.length === 0) {
-      setErro("Preencha todos os campos.");
+      mostrarAlerta("error", "Preencha todos os campos.");
       return;
     }
 
@@ -65,7 +74,7 @@ export default function Form({ onSubmit, gerarHorarios }) {
     setLoading(false);
 
     if (ok === false) {
-      setErro("Esse horário não comporta os serviços selecionados.");
+      mostrarAlerta("error", "Esse horário não comporta os serviços selecionados.");
       return;
     }
 
@@ -73,8 +82,8 @@ export default function Form({ onSubmit, gerarHorarios }) {
     setData("");
     setHorarioSelecionado(null);
     setServicosSelecionados([]);
-    setSucesso("Agendamento realizado com sucesso!");
-    setTimeout(() => setSucesso(""), 3000);
+
+    mostrarAlerta("success", "Agendamento realizado com sucesso!");
   }
 
   function renderBloco(titulo, lista) {
@@ -85,20 +94,19 @@ export default function Form({ onSubmit, gerarHorarios }) {
         <h3 className="periodo-titulo">{titulo}</h3>
         <div className="horarios-grid">
           {lista.map((h) => (
-          <button
-            type="button"
-            key={h.inicioMinutos}
-            className={`horario-btn ${
-              horarioSelecionado?.inicioMinutos === h.inicioMinutos
-                ? "ativo"
-                : ""
-            }`}
-            onClick={() => setHorarioSelecionado(h)}
-          >
-            <span>{h.inicio}</span>
-            <small>até {h.fim}</small>
-          </button>
-
+            <button
+              type="button"
+              key={h.inicioMinutos}
+              className={`horario-btn ${
+                horarioSelecionado?.inicioMinutos === h.inicioMinutos
+                  ? "ativo"
+                  : ""
+              }`}
+              onClick={() => setHorarioSelecionado(h)}
+            >
+              <span>{h.inicio}</span>
+              <small>até {h.fim}</small>
+            </button>
           ))}
         </div>
       </>
@@ -107,11 +115,18 @@ export default function Form({ onSubmit, gerarHorarios }) {
 
   return (
     <div className="form-container">
+
+      {/* 🔔 ALERTA VISUAL CENTRAL */}
+      {alerta.visivel && (
+        <div className="alert-overlay">
+          <div className={`alert-box ${alerta.tipo}`}>
+            {alerta.mensagem}
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="form-box">
         <h2>Agendar horário</h2>
-
-        {erro && <p className="form-erro">{erro}</p>}
-        {sucesso && <p className="form-sucesso">{sucesso}</p>}
 
         <input
           type="text"
@@ -135,7 +150,7 @@ export default function Form({ onSubmit, gerarHorarios }) {
           <p>Selecione os serviços:</p>
 
           {Object.entries(SERVICOS).map(([key, servico]) => (
-          <label
+            <label
               key={key}
               className={`servico-item ${
                 servicosSelecionados.includes(key) ? "checked" : ""
@@ -151,7 +166,6 @@ export default function Form({ onSubmit, gerarHorarios }) {
                 onChange={() => handleServicoChange(key)}
               />
             </label>
-
           ))}
         </div>
 

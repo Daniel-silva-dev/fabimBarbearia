@@ -180,3 +180,36 @@
   opacity: 0.7;
   margin-top: 4px;
 }
+/* 🔔 ALERT OVERLAY */
+.alert-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.alert-box {
+  padding: 18px 28px;
+  border-radius: 10px;
+  font-weight: bold;
+  color: #fff;
+  animation: fadeScale 0.2s ease-in-out;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+}
+
+.alert-box.success {
+  background: #1f8f4e;
+}
+
+.alert-box.error {
+  background: #c0392b;
+}
+
+@keyframes fadeScale {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
