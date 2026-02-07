@@ -100,7 +100,7 @@ function App() {
 
   return (
     <AuthProvider>
-      <BrowserRouter basename="/fabimBarber">
+      <BrowserRouter basename="/fabimBarbearia">
         <RedirectHandler />
 
         <Routes>
