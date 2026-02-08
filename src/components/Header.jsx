@@ -82,10 +82,13 @@ export default function Header({ lista = [] }) {
                           )}
                         </div>
 
-                        <span className="hora">
-                          {evento.inicio} - {evento.fim}
-                        </span>
+                      <span className="hora">
+                        <span className="hora-inicio">{evento.inicio}</span>
+                        {" - "}
+                        <span className="hora-fim">{evento.fim}</span>
+                      </span>
                         <span className="status">✅</span>
+
                         
                       </li>
                     );

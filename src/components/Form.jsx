@@ -181,7 +181,7 @@ export default function Form({ onSubmit, gerarHorarios }) {
               }`}
             >
               <span>
-                {servico.nome} — R$ {servico.preco}
+                {servico.nome}  — {servico.preco} Reais
               </span>
 
               <input

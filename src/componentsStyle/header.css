@@ -64,6 +64,16 @@
   width: 35%;
   text-align: right;
 }
+.hora-inicio {
+  color: #2ecc71; /* verde */
+  font-weight: 600;
+}
+
+.hora-fim {
+  color: #e74c3c; /* vermelho */
+  font-weight: 600;
+}
+
 
 .bloco-dia {
   margin-top: 20px;
