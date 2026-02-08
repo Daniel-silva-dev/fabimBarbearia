@@ -9,9 +9,8 @@ export default function Form({ onSubmit, gerarHorarios }) {
   const [servicosSelecionados, setServicosSelecionados] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 🔔 NOVO ALERT VISUAL
   const [alerta, setAlerta] = useState({
-    tipo: "", // success | error
+    tipo: "",
     mensagem: "",
     visivel: false
   });
@@ -31,10 +30,35 @@ export default function Form({ onSubmit, gerarHorarios }) {
     );
   }
 
+  // 🔥 CALCULAR DURAÇÃO TOTAL
   const duracaoTotal = useMemo(() => {
     return servicosSelecionados.reduce((total, chave) => {
       return total + (SERVICOS[chave]?.duracao || 0);
     }, 0);
+  }, [servicosSelecionados]);
+
+  // 💰 CALCULAR VALOR TOTAL
+  const { totalFinal, descontoAplicado } = useMemo(() => {
+    let total = servicosSelecionados.reduce((acc, chave) => {
+      return acc + (SERVICOS[chave]?.preco || 0);
+    }, 0);
+
+    const nomesSelecionados = servicosSelecionados.map(
+      (key) => SERVICOS[key]?.nome?.toLowerCase()
+    );
+
+    const temCabelo = nomesSelecionados.includes("cabelo");
+    const temBarba = nomesSelecionados.includes("barba");
+    const temSobrancelha = nomesSelecionados.includes("sobrancelha");
+
+    let desconto = 0;
+
+    if (temCabelo && temBarba && temSobrancelha) {
+      desconto = 5;
+      total -= desconto;
+    }
+
+    return { totalFinal: total, descontoAplicado: desconto };
   }, [servicosSelecionados]);
 
   const horariosDisponiveis = useMemo(() => {
@@ -68,7 +92,8 @@ export default function Form({ onSubmit, gerarHorarios }) {
       fim: horarioSelecionado.fim,
       inicioMinutos: horarioSelecionado.inicioMinutos,
       fimMinutos: horarioSelecionado.fimMinutos,
-      status: "ativo"
+      status: "ativo",
+      valorTotal: totalFinal // 🔥 ENVIA VALOR FINAL
     });
 
     setLoading(false);
@@ -83,7 +108,7 @@ export default function Form({ onSubmit, gerarHorarios }) {
     setHorarioSelecionado(null);
     setServicosSelecionados([]);
 
-    mostrarAlerta("success", "Agendamento realizado com sucesso!");
+    mostrarAlerta("success", `Agendamento realizado! Total: R$ ${totalFinal}`);
   }
 
   function renderBloco(titulo, lista) {
@@ -116,7 +141,6 @@ export default function Form({ onSubmit, gerarHorarios }) {
   return (
     <div className="form-container">
 
-      {/* 🔔 ALERTA VISUAL CENTRAL */}
       {alerta.visivel && (
         <div className="alert-overlay">
           <div className={`alert-box ${alerta.tipo}`}>
@@ -157,7 +181,7 @@ export default function Form({ onSubmit, gerarHorarios }) {
               }`}
             >
               <span>
-                {servico.nome} ({servico.duracao} min)
+                {servico.nome} — R$ {servico.preco}
               </span>
 
               <input
@@ -168,6 +192,18 @@ export default function Form({ onSubmit, gerarHorarios }) {
             </label>
           ))}
         </div>
+
+        {/* 💰 RESUMO DO VALOR */}
+        {servicosSelecionados.length > 0 && (
+          <div className="resumo-preco">
+            {descontoAplicado > 0 && (
+              <p className="desconto-info">
+                Desconto aplicado: -R$ {descontoAplicado}
+              </p>
+            )}
+            <h3>Total: R$ {totalFinal}</h3>
+          </div>
+        )}
 
         <div className="horarios-box">
           <p>Horários disponíveis:</p>
