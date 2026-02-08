@@ -84,8 +84,9 @@ export default function Header({ lista = [] }) {
 
                         <span className="hora">
                           {evento.inicio} - {evento.fim}
-                          ✅
                         </span>
+                        <span className="status">✅</span>
+                        
                       </li>
                     );
                   })}
