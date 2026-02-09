@@ -17,7 +17,7 @@ export default function Footer() {
           rel="noreferrer"
           aria-label="WhatsApp"
         >
-          <FaWhatsapp />
+          <FaWhatsapp className="whatsapp" />
         </a>
 
         <a
@@ -26,14 +26,14 @@ export default function Footer() {
           rel="noreferrer"
           aria-label="Instagram"
         >
-          <FaInstagram />
+          <FaInstagram className="insta" />
         </a>
         <Link
           to="/admin"
           aria-label="Painel Admin"
           className="footer-admin"
         >
-          <FaUserShield />
+          <FaUserShield className="admin" />
         </Link>
       </div>
     </footer>
