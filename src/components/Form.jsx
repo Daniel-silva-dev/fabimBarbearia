@@ -1,6 +1,7 @@
 import "../componentsStyle/form.css";
 import { useState, useMemo } from "react";
 import { SERVICOS } from "../config/servicos";
+import { enviarEmailAgendamento } from "../services/email";
 
 export default function Form({ onSubmit, gerarHorarios }) {
   const [nome, setNome] = useState("");
@@ -30,14 +31,12 @@ export default function Form({ onSubmit, gerarHorarios }) {
     );
   }
 
-  // 🔥 CALCULAR DURAÇÃO TOTAL
   const duracaoTotal = useMemo(() => {
     return servicosSelecionados.reduce((total, chave) => {
       return total + (SERVICOS[chave]?.duracao || 0);
     }, 0);
   }, [servicosSelecionados]);
 
-  // 💰 CALCULAR VALOR TOTAL
   const { totalFinal, descontoAplicado } = useMemo(() => {
     let total = servicosSelecionados.reduce((acc, chave) => {
       return acc + (SERVICOS[chave]?.preco || 0);
@@ -93,22 +92,37 @@ export default function Form({ onSubmit, gerarHorarios }) {
       inicioMinutos: horarioSelecionado.inicioMinutos,
       fimMinutos: horarioSelecionado.fimMinutos,
       status: "ativo",
-      valorTotal: totalFinal // 🔥 ENVIA VALOR FINAL
+      valorTotal: totalFinal
     });
 
-    setLoading(false);
-
     if (ok === false) {
+      setLoading(false);
       mostrarAlerta("error", "Esse horário não comporta os serviços selecionados.");
       return;
     }
+
+    // 🔥 ENVIO DE EMAIL ORGANIZADO
+    const emailEnviado = await enviarEmailAgendamento({
+      nome,
+      data,
+      inicio: horarioSelecionado.inicio,
+      fim: horarioSelecionado.fim,
+      servicos: servicosSelecionados.join(", "),
+      total: totalFinal
+    });
+
+    setLoading(false);
 
     setNome("");
     setData("");
     setHorarioSelecionado(null);
     setServicosSelecionados([]);
 
-    mostrarAlerta("success", `Agendamento realizado! Total: R$ ${totalFinal}`);
+    if (emailEnviado) {
+      mostrarAlerta("success", `Agendamento realizado! Total: R$ ${totalFinal}`);
+    } else {
+      mostrarAlerta("success", `Agendamento salvo! (E-mail não enviado)`);
+    }
   }
 
   function renderBloco(titulo, lista) {
@@ -140,7 +154,6 @@ export default function Form({ onSubmit, gerarHorarios }) {
 
   return (
     <div className="form-container">
-
       {alerta.visivel && (
         <div className="alert-overlay">
           <div className={`alert-box ${alerta.tipo}`}>
@@ -181,7 +194,7 @@ export default function Form({ onSubmit, gerarHorarios }) {
               }`}
             >
               <span>
-                {servico.nome}  — {servico.preco} Reais
+                {servico.nome} — {servico.preco} Reais
               </span>
 
               <input
@@ -193,7 +206,6 @@ export default function Form({ onSubmit, gerarHorarios }) {
           ))}
         </div>
 
-        {/* 💰 RESUMO DO VALOR */}
         {servicosSelecionados.length > 0 && (
           <div className="resumo-preco">
             {descontoAplicado > 0 && (
