@@ -137,6 +137,12 @@
   font-weight: 600;
   transform: scale(1.05);
 }
+.inicio{
+ color: green;
+}
+.fim{
+  color: red;
+}
 
 /* BOTÃO FINAL */
 

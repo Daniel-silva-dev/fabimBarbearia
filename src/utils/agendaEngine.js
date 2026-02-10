@@ -31,11 +31,35 @@ export function gerarHorariosDisponiveis({
 
   const horarios = [];
 
-  for (
-    let inicio = inicioExpediente;
-    inicio + duracao <= fimExpediente;
-    inicio += 10
-  ) {
+  const BASE_INTERVALO = 30;
+
+  let pontosInicio = [];
+
+  // 1️⃣ Base fixa de 30 em 30
+  for (let m = inicioExpediente; m < fimExpediente; m += BASE_INTERVALO) {
+    pontosInicio.push(m);
+  }
+
+  // 2️⃣ Adiciona finais de agendamentos para permitir encaixe inteligente
+  agendamentos.forEach((ag) => {
+    if (
+      ag.fimMinutos >= inicioExpediente &&
+      ag.fimMinutos < fimExpediente
+    ) {
+      pontosInicio.push(ag.fimMinutos);
+    }
+  });
+
+  // 3️⃣ Remove duplicados e ordena
+  pontosInicio = [...new Set(pontosInicio)].sort((a, b) => a - b);
+
+  // 4️⃣ Gera horários válidos
+  for (let inicio of pontosInicio) {
+
+    // 🔥 AQUI FOI A MUDANÇA
+    // Agora só bloqueia se começar depois das 20:00
+    if (inicio >= fimExpediente) continue;
+
     const fim = inicio + duracao;
 
     // Bloqueia almoço
@@ -46,34 +70,16 @@ export function gerarHorariosDisponiveis({
     });
 
     if (!conflito) {
-      // 🔥 CALCULA PRIORIDADE (evita buracos)
-      let menorEspaco = Infinity;
-
-      agendamentos.forEach((ag) => {
-        const espacoAntes = Math.abs(inicio - ag.fimMinutos);
-        const espacoDepois = Math.abs(ag.inicioMinutos - fim);
-
-        if (espacoAntes >= 0 && espacoAntes < menorEspaco) {
-          menorEspaco = espacoAntes;
-        }
-
-        if (espacoDepois >= 0 && espacoDepois < menorEspaco) {
-          menorEspaco = espacoDepois;
-        }
-      });
-
       horarios.push({
         inicioMinutos: inicio,
         fimMinutos: fim,
         inicio: minutosParaHora(inicio),
         fim: minutosParaHora(fim),
-        prioridade: menorEspaco
       });
     }
   }
 
-  // 🔥 Ordena priorizando melhor encaixe
-  horarios.sort((a, b) => a.prioridade - b.prioridade);
+  horarios.sort((a, b) => a.inicioMinutos - b.inicioMinutos);
 
   return horarios;
 }

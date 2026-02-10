@@ -143,8 +143,8 @@ export default function Form({ onSubmit, gerarHorarios }) {
               }`}
               onClick={() => setHorarioSelecionado(h)}
             >
-              <span>{h.inicio}</span>
-              <small>até {h.fim}</small>
+              <span>inicio: <span className="inicio">{h.inicio}</span></span>
+              <span>fim: <span className="fim">{h.fim}</span></span>
             </button>
           ))}
         </div>

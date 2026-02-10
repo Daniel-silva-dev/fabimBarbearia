@@ -59,20 +59,40 @@ export function gerarHorariosDisponiveis({
 
   const horariosValidos = [];
 
-  for (
-    let inicio = inicioDia;
-    inicio + duracaoTotal <= fimDia;
-    inicio += INTERVALO_MINUTOS
-  ) {
+  const BASE_INTERVALO = 30; // 👈 agora visualmente é 30min
+
+  // Pegar finais de agendamentos como possíveis novos inícios
+  const finaisOcupados = ocupados.map(o => o.fim);
+
+  // Gerar pontos base (de 30 em 30)
+  let pontosInicio = [];
+
+  for (let m = inicioDia; m <= fimDia; m += BASE_INTERVALO) {
+    pontosInicio.push(m);
+  }
+
+  // Adicionar finais de agendamentos como novos pontos possíveis
+  finaisOcupados.forEach(fim => {
+    if (fim >= inicioDia && fim < fimDia) {
+      pontosInicio.push(fim);
+    }
+  });
+
+  // Remover duplicados e ordenar
+  pontosInicio = [...new Set(pontosInicio)].sort((a, b) => a - b);
+
+  for (let inicio of pontosInicio) {
     const fim = inicio + duracaoTotal;
 
-    // 1️⃣ Verificar se invade pausa
+    if (fim > fimDia) continue;
+
+    // 1️⃣ Verificar pausa
     const invadePausa = pausas.some(p =>
       inicio < p.fim && fim > p.inicio
     );
     if (invadePausa) continue;
 
-    // 2️⃣ Verificar conflito com agendamento existente
+    // 2️⃣ Verificar conflito
     const conflito = ocupados.some(o =>
       inicio < o.fim && fim > o.inicio
     );
@@ -83,6 +103,7 @@ export function gerarHorariosDisponiveis({
       fim
     });
   }
+
 
   return {
     fechado: false,
