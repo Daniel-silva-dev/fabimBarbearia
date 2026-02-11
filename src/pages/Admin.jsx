@@ -84,6 +84,35 @@ function fecharModal() {
 
     return () => unsubscribe();
   }, []);
+  /* 🔥 Limpeza automática de cancelados e bloqueados passados */
+useEffect(() => {
+  async function limparAntigos() {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const snapshot = await getDocs(collection(db, "agendamentos"));
+
+    snapshot.forEach(async (docSnap) => {
+      const dados = docSnap.data();
+
+      if (!dados.data) return;
+
+      const dataItem = new Date(dados.data + "T00:00:00");
+
+      const ehPassado = dataItem < hoje;
+      const statusInvalido =
+        dados.status === "cancelado" ||
+        dados.status === "bloqueado";
+
+      if (ehPassado && statusInvalido) {
+        await deleteDoc(doc(db, "agendamentos", docSnap.id));
+      }
+    });
+  }
+
+  limparAntigos();
+}, [agendamentos]);
+
 
   /* 🔹 Carregar configuração Segunda OFF */
   useEffect(() => {
