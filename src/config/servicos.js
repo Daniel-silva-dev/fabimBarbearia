@@ -13,10 +13,5 @@ export const SERVICOS = {
     nome: "Sobrancelha",
     duracao: 10,
     preco: 15
-  },
-  peDoCabelo: {
-    nome: "Pé do Cabelo",
-    duracao: 10,
-    preco: 5
   }
 };

@@ -7,7 +7,7 @@ export default function Footer() {
   return (
     <footer className="footer">
       <div className="footer-left">
-        © {new Date().getFullYear()} Fábim Barber
+        © {new Date().getFullYear()} Fábim Barbearia
       </div>
 
       <div className="footer-links">

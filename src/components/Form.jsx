@@ -10,17 +10,12 @@ export default function Form({ onSubmit, gerarHorarios }) {
   const [servicosSelecionados, setServicosSelecionados] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const [alerta, setAlerta] = useState({
-    tipo: "",
-    mensagem: "",
-    visivel: false
-  });
+  // 🔥 MODAL CONTROLADO
+  const [modalVisivel, setModalVisivel] = useState(false);
+  const [mensagemModal, setMensagemModal] = useState("");
 
-  function mostrarAlerta(tipo, mensagem) {
-    setAlerta({ tipo, mensagem, visivel: true });
-    setTimeout(() => {
-      setAlerta({ tipo: "", mensagem: "", visivel: false });
-    }, 3000);
+  function fecharModal() {
+    setModalVisivel(false);
   }
 
   function handleServicoChange(servico) {
@@ -77,7 +72,8 @@ export default function Form({ onSubmit, gerarHorarios }) {
     e.preventDefault();
 
     if (!nome || !data || !horarioSelecionado || servicosSelecionados.length === 0) {
-      mostrarAlerta("error", "Preencha todos os campos.");
+      setMensagemModal("Por favor, preencha todos os campos.");
+      setModalVisivel(true);
       return;
     }
 
@@ -97,12 +93,12 @@ export default function Form({ onSubmit, gerarHorarios }) {
 
     if (ok === false) {
       setLoading(false);
-      mostrarAlerta("error", "Esse horário não comporta os serviços selecionados.");
+      setMensagemModal("Esse horário não comporta os serviços selecionados.");
+      setModalVisivel(true);
       return;
     }
 
-    // 🔥 ENVIO DE EMAIL ORGANIZADO
-    const emailEnviado = await enviarEmailAgendamento({
+    await enviarEmailAgendamento({
       nome,
       data,
       inicio: horarioSelecionado.inicio,
@@ -118,11 +114,17 @@ export default function Form({ onSubmit, gerarHorarios }) {
     setHorarioSelecionado(null);
     setServicosSelecionados([]);
 
-    if (emailEnviado) {
-      mostrarAlerta("success", `Agendamento realizado! Total: R$ ${totalFinal}`);
-    } else {
-      mostrarAlerta("success", `Agendamento salvo! (E-mail não enviado)`);
-    }
+    setMensagemModal(`
+Agendamento confirmado com sucesso!
+
+Total: R$ ${totalFinal}
+
+Pedimos que chegue 5 minutos antes do horário marcado.
+
+Qualquer dúvida, fale conosco:
+    `);
+
+    setModalVisivel(true);
   }
 
   function renderBloco(titulo, lista) {
@@ -143,8 +145,12 @@ export default function Form({ onSubmit, gerarHorarios }) {
               }`}
               onClick={() => setHorarioSelecionado(h)}
             >
-              <span>inicio: <span className="inicio">{h.inicio}</span></span>
-              <span>fim: <span className="fim">{h.fim}</span></span>
+              <span>
+                início: <span className="inicio">{h.inicio}</span>
+              </span>
+              <span>
+                fim: <span className="fim">{h.fim}</span>
+              </span>
             </button>
           ))}
         </div>
@@ -154,10 +160,34 @@ export default function Form({ onSubmit, gerarHorarios }) {
 
   return (
     <div className="form-container">
-      {alerta.visivel && (
-        <div className="alert-overlay">
-          <div className={`alert-box ${alerta.tipo}`}>
-            {alerta.mensagem}
+
+      {/* 🔥 MODAL PERSONALIZADO */}
+      {modalVisivel && (
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <p style={{ whiteSpace: "pre-line" }}>{mensagemModal}</p>
+
+            <div className="modal-links">
+              <a
+                href="https://wa.me/5584999999999"
+                target="_blank"
+                rel="noreferrer"
+              >
+                WhatsApp
+              </a>
+
+              <a
+                href="https://instagram.com/seuinstagram"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Instagram
+              </a>
+            </div>
+
+            <button onClick={fecharModal} className="modal-btn">
+              OK
+            </button>
           </div>
         </div>
       )}
