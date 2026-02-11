@@ -3,8 +3,8 @@ import { minutosParaHora } from "./time";
 const ABERTURA = 8 * 60;   // 08:00
 const FECHAMENTO = 20 * 60; // 20:00
 
-const DURACAO_FIXA = 40; // 🔥 40 minutos fixos
-const INTERVALO = 5;     // 🔥 5 minutos entre atendimentos
+const DURACAO_FIXA = 40; // 40 minutos fixos
+const INTERVALO = 5;     // 5 minutos entre atendimentos
 
 const BLOCO_TOTAL = DURACAO_FIXA + INTERVALO;
 
@@ -41,24 +41,31 @@ export function gerarHorariosDisponiveis({
     inicio += BLOCO_TOTAL
   ) {
 
-    const fim = inicio + DURACAO_FIXA;
+    let inicioReal = inicio;
 
-    // Bloqueia almoço
-    if (inicio < ALMOCO_FIM && fim > ALMOCO_INICIO+30 ) continue;
+    // 🔥 Se cair exatamente 11:45, substitui por 11:40
+    if (inicio === 11 * 60 + 45) {
+      inicioReal = 11 * 60 + 40;
+    }
+
+    const fim = inicioReal + DURACAO_FIXA;
+
+    // Bloqueia horário de almoço
+    if (inicioReal < ALMOCO_FIM && fim > ALMOCO_INICIO + 30) continue;
 
     // Verifica conflito (considerando intervalo também)
     const conflito = agendamentos.some((ag) => {
       const agInicio = ag.inicioMinutos;
       const agFim = ag.fimMinutos + INTERVALO;
 
-      return inicio < agFim && fim > agInicio;
+      return inicioReal < agFim && fim > agInicio;
     });
 
     if (!conflito) {
       horarios.push({
-        inicioMinutos: inicio,
+        inicioMinutos: inicioReal,
         fimMinutos: fim,
-        inicio: minutosParaHora(inicio),
+        inicio: minutosParaHora(inicioReal),
         fim: minutosParaHora(fim),
       });
     }
