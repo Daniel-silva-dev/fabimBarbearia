@@ -33,6 +33,8 @@ export default function Admin() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [modalAction, setModalAction] = useState(null);
+  const [mostrarFinalizados, setMostrarFinalizados] = useState(false);
+
 
 function confirmarAcao(mensagem, callback) {
   setModalMessage(mensagem);
@@ -242,9 +244,14 @@ useEffect(() => {
 
   /* 🔥 Filtro principal */
   const agendamentosFiltrados = agendamentos.filter((item) => {
-    if (!mostrarPassados && isPassado(item.data)) return false;
-    return true;
-  });
+  if (!mostrarPassados && isPassado(item.data)) return false;
+
+  // 🔥 Oculta finalizados se o botão não estiver ativo
+  if (!mostrarFinalizados && item.status === "finalizado") return false;
+
+  return true;
+});
+
 
   /* 🔹 Agrupar por data */
   const agendamentosPorDia = agendamentosFiltrados.reduce((acc, item) => {
@@ -337,6 +344,13 @@ function calcularFaturamento() {
           />
           Mostrar dias passados
         </label>
+        <button
+            className="admin-btn"
+            onClick={() => setMostrarFinalizados(!mostrarFinalizados)}
+          >
+            {mostrarFinalizados ? "Ocultar Finalizados" : "Mostrar Finalizados"}
+          </button>
+
 
         <div className="segunda-control">
           <span>Segunda-feira:</span>
