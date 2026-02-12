@@ -1,9 +1,9 @@
-💈 Fábim Barber – Sistema de Agendamentos
+💈 Fábim Barbearia– Sistema de Agendamentos
 
 Sistema moderno de agendamento para barbearia, desenvolvido com React + Vite + Firebase, focado em UX simples, admin seguro e deploy em produção no GitHub Pages.
 
 🔗 Acesso público:
-https://daniel-silva-dev.github.io/fabimBarber
+https://daniel-silva-dev.github.io/fabimBarbearia
 
 📌 Visão Geral
 
