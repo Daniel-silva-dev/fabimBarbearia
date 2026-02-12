@@ -68,7 +68,7 @@ function fecharModal() {
     return dataItem < hoje;
   }
 
-  /* 🔥 Escuta tempo real */
+
   useEffect(() => {
     const q = query(
       collection(db, "agendamentos"),
@@ -86,7 +86,6 @@ function fecharModal() {
 
     return () => unsubscribe();
   }, []);
-  /* 🔥 Limpeza automática de cancelados e bloqueados passados */
 useEffect(() => {
   async function limparAntigos() {
     const hoje = new Date();
@@ -116,7 +115,6 @@ useEffect(() => {
 }, [agendamentos]);
 
 
-  /* 🔹 Carregar configuração Segunda OFF */
   useEffect(() => {
     async function carregarConfig() {
       const snap = await getDoc(doc(db, "configuracoes", "geral"));
@@ -127,7 +125,7 @@ useEffect(() => {
     carregarConfig();
   }, []);
 
-  /* 🔹 Toggle Segunda OFF */
+
   async function toggleSegundaOff() {
     const novoStatus = !segundaOff;
     setSegundaOff(novoStatus);
@@ -146,7 +144,7 @@ useEffect(() => {
     }
   }
 
-  /* 🔹 Bloquear próximas 60 segundas */
+
   async function bloquearProximasSegundas() {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -172,7 +170,7 @@ useEffect(() => {
     }
   }
 
-  /* 🔹 Remover bloqueios automáticos */
+
   async function removerBloqueiosSegunda() {
     const snapshot = await getDocs(collection(db, "agendamentos"));
 
@@ -185,13 +183,12 @@ useEffect(() => {
     });
   }
 
-  /* 🔹 Atualizar status */
   async function atualizarStatus(id, status) {
     await updateDoc(doc(db, "agendamentos", id), { status });
     mostrarFeedback("success", `Status alterado para ${status}`);
   }
 
-  /* 🔹 Finalizar passados */
+
   async function finalizarDiasPassados() {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -216,7 +213,7 @@ useEffect(() => {
     mostrarFeedback("success", "Dias passados finalizados");
   }
 
-  /* 🔥 🔥 BLOQUEIO MANUAL AGORA 1 HORA INTEIRA */
+
   async function bloquearHorario() {
     if (!dataBloqueio || !horarioBloqueio) {
       mostrarFeedback("error", "Selecione data e horário");
@@ -224,7 +221,7 @@ useEffect(() => {
     }
 
     const inicioMinutos = horaParaMinutos(horarioBloqueio);
-    const fimMinutos = inicioMinutos + 60; // 🔥 1 HORA
+    const fimMinutos = inicioMinutos + 60;
 
     await addDoc(collection(db, "agendamentos"), {
       nome: "HORÁRIO BLOQUEADO",
@@ -241,26 +238,59 @@ useEffect(() => {
     setDataBloqueio("");
     setHorarioBloqueio("");
   }
+async function bloquearDiaInteiro() {
+  if (!dataBloqueio) {
+    mostrarFeedback("error", "Selecione uma data");
+    return;
+  }
 
-  /* 🔥 Filtro principal */
+  await addDoc(collection(db, "agendamentos"), {
+    nome: "DIA BLOQUEADO",
+    data: dataBloqueio,
+    inicio: "00:00",
+    fim: "23:59",
+    inicioMinutos: 0,
+    fimMinutos: 1440,
+    status: "bloqueado"
+  });
+
+  mostrarFeedback("success", `Dia ${dataBloqueio} bloqueado com sucesso`);
+  setDataBloqueio("");
+}
+async function desbloquearDia(data) {
+  const snapshot = await getDocs(collection(db, "agendamentos"));
+
+  snapshot.forEach(async (docSnap) => {
+    const dados = docSnap.data();
+
+    if (
+      dados.data === data &&
+      dados.nome === "DIA BLOQUEADO" &&
+      dados.status === "bloqueado"
+    ) {
+      await deleteDoc(doc(db, "agendamentos", docSnap.id));
+    }
+  });
+
+  mostrarFeedback("success", `Dia ${data} desbloqueado com sucesso`);
+}
+
   const agendamentosFiltrados = agendamentos.filter((item) => {
   if (!mostrarPassados && isPassado(item.data)) return false;
 
-  // 🔥 Oculta finalizados se o botão não estiver ativo
+
   if (!mostrarFinalizados && item.status === "finalizado") return false;
 
   return true;
 });
 
-
-  /* 🔹 Agrupar por data */
   const agendamentosPorDia = agendamentosFiltrados.reduce((acc, item) => {
     if (!acc[item.data]) acc[item.data] = [];
     acc[item.data].push(item);
     return acc;
   }, {});
 
-  /* 🔥 CALCULAR FATURAMENTO MENSAL */
+
 function calcularFaturamento() {
   const agora = new Date();
   const mesAtual = agora.getMonth();
@@ -290,7 +320,6 @@ function calcularFaturamento() {
 
     const faturamentoMensal = calcularFaturamento();
 
-    /* 🔥 MÉTRICAS */
     const totalHoje = agendamentos.filter(a => {
       const hoje = new Date().toISOString().split("T")[0];
       return a.data === hoje && a.status === "ativo";
@@ -333,7 +362,6 @@ function calcularFaturamento() {
 </div>
 
 
-      {/* 🔥 Segunda OFF */}
       <div className="admin-top-controls">
 
         <label className="admin-checkbox">
@@ -343,6 +371,7 @@ function calcularFaturamento() {
             onChange={(e) => setMostrarPassados(e.target.checked)}
           />
           Mostrar dias passados
+          
         </label>
         <button
             className="admin-btn"
@@ -389,6 +418,17 @@ function calcularFaturamento() {
         <button className="admin-btn bloquear"  onClick={() => confirmarAcao("Tem certeza que deseja bloquear este horário?", bloquearHorario)}>
           Bloquear 1 hora
         </button>
+        <button
+          className="admin-btn cancel"
+          onClick={() =>
+            confirmarAcao(
+              "Tem certeza que deseja bloquear o dia inteiro?",
+              bloquearDiaInteiro)
+          }
+        >
+          Bloquear Dia Inteiro
+        </button>
+
       </div>
 
       {/* LISTA */}
@@ -464,6 +504,18 @@ function calcularFaturamento() {
                         Reativar
                       </button>
                     )}
+                   {item.nome === "DIA BLOQUEADO" && (
+                    <button
+                        className="admin-btn reativar"
+                          onClick={() =>
+                            confirmarAcao(
+                              "Tem certeza que deseja desbloquear este dia inteiro?",
+                              () => desbloquearDia(item.data)
+                            )}>
+                          Desbloquear Dia
+                        </button>
+                      )}
+
 
                   </div>
                 </div>
