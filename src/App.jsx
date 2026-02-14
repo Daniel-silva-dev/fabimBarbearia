@@ -57,24 +57,24 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  /* 🔧 Geração dinâmica de horários */
-  const obterHorarios = useCallback(
-    (data, duracao) => {
-      const agendamentosDoDia = lista.filter(
-        (item) =>
-          item.data === data &&
-          (item.status === "ativo" || item.status === "bloqueado")
-      );
+const obterHorarios = useCallback(
+  ({ data, servicosSelecionados }) => {
+    const agendamentosDoDia = lista.filter(
+      (item) =>
+        item.data === data &&
+        (item.status === "ativo" || item.status === "bloqueado")
+    );
 
-      return gerarHorariosDisponiveis({
-        data,
-        duracao,
-        agendamentos: agendamentosDoDia,
-        segundaFechada: false, // pode virar config depois
-      });
-    },
-    [lista]
-  );
+    return gerarHorariosDisponiveis({
+      data,
+      servicosSelecionados,
+      agendamentos: agendamentosDoDia,
+      segundaFechada: false,
+    });
+  },
+  [lista]
+);
+
 
   /* ➕ Criar novo agendamento */
   async function novoEvento(evento) {

@@ -55,10 +55,15 @@ export default function Form({ onSubmit, gerarHorarios }) {
     return { totalFinal: total, descontoAplicado: desconto };
   }, [servicosSelecionados]);
 
-  const horariosDisponiveis = useMemo(() => {
-    if (!data || duracaoTotal === 0) return [];
-    return gerarHorarios(data, duracaoTotal);
-  }, [data, duracaoTotal, gerarHorarios]);
+const horariosDisponiveis = useMemo(() => {
+  if (!data || servicosSelecionados.length === 0) return [];
+
+  return gerarHorarios({
+    data,
+    servicosSelecionados,
+  });
+}, [data, servicosSelecionados, gerarHorarios]);
+
 
   const horariosManha = horariosDisponiveis.filter(
     (h) => h.inicioMinutos < 12 * 60

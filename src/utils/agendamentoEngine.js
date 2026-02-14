@@ -1,33 +1,23 @@
 import { SERVICOS } from "../config/servicos";
-import { getRegrasDoDia, INTERVALO_MINUTOS } from "../config/funcionamento";
-
-/* =========================
-   Funções auxiliares
-========================= */
+import { getRegrasDoDia } from "../config/funcionamento";
 
 import { horaParaMinutos, minutosParaHora } from "./time";
 
-
-
-function calcularDuracaoTotal(servicosSelecionados) {
+function calcularDuracaoTotal(servicosSelecionados = []) {
   return servicosSelecionados.reduce((total, chave) => {
     return total + (SERVICOS[chave]?.duracao || 0);
   }, 0);
 }
 
-/* =========================
-   Função principal
-========================= */
-
 export function gerarHorariosDisponiveis({
   data,
-  servicosSelecionados,
-  agendamentosDoDia
+  servicosSelecionados = [],
+  agendamentosDoDia = []
 }) {
 
   const regras = getRegrasDoDia(data);
 
-  if (!regras.aberto) {
+  if (!regras?.aberto) {
     return {
       fechado: true,
       horarios: []
@@ -36,7 +26,7 @@ export function gerarHorariosDisponiveis({
 
   const duracaoTotal = calcularDuracaoTotal(servicosSelecionados);
 
-  if (duracaoTotal === 0) {
+  if (!duracaoTotal) {
     return {
       fechado: false,
       horarios: []
@@ -46,12 +36,11 @@ export function gerarHorariosDisponiveis({
   const inicioDia = horaParaMinutos(regras.inicio);
   const fimDia = horaParaMinutos(regras.fim);
 
-  const pausas = regras.pausas.map(p => ({
+  const pausas = (regras.pausas || []).map(p => ({
     inicio: horaParaMinutos(p.inicio),
     fim: horaParaMinutos(p.fim)
   }));
 
-  // Converter agendamentos existentes
   const ocupados = agendamentosDoDia.map(a => ({
     inicio: a.inicioMinutos,
     fim: a.fimMinutos
@@ -59,56 +48,35 @@ export function gerarHorariosDisponiveis({
 
   const horariosValidos = [];
 
-  const BASE_INTERVALO = 30; // 👈 agora visualmente é 30min
+  const BASE_INTERVALO = 20;
 
-  // Pegar finais de agendamentos como possíveis novos inícios
-  const finaisOcupados = ocupados.map(o => o.fim);
+  for (
+    let inicio = inicioDia;
+    inicio + duracaoTotal <= fimDia;
+    inicio += BASE_INTERVALO
+  ) {
 
-  // Gerar pontos base (de 30 em 30)
-  let pontosInicio = [];
-
-  for (let m = inicioDia; m <= fimDia; m += BASE_INTERVALO) {
-    pontosInicio.push(m);
-  }
-
-  // Adicionar finais de agendamentos como novos pontos possíveis
-  finaisOcupados.forEach(fim => {
-    if (fim >= inicioDia && fim < fimDia) {
-      pontosInicio.push(fim);
-    }
-  });
-
-  // Remover duplicados e ordenar
-  pontosInicio = [...new Set(pontosInicio)].sort((a, b) => a - b);
-
-  for (let inicio of pontosInicio) {
     const fim = inicio + duracaoTotal;
 
-    if (fim > fimDia) continue;
-
-    // 1️⃣ Verificar pausa
+    // Verifica pausa
     const invadePausa = pausas.some(p =>
       inicio < p.fim && fim > p.inicio
     );
     if (invadePausa) continue;
 
-    // 2️⃣ Verificar conflito
+    // Verifica conflito
     const conflito = ocupados.some(o =>
       inicio < o.fim && fim > o.inicio
     );
     if (conflito) continue;
 
-    horariosValidos.push({
-      inicio,
-      fim
-    });
+    horariosValidos.push(
+      minutosParaHora(inicio)
+    );
   }
-
 
   return {
     fechado: false,
-    horarios: horariosValidos.map(h =>
-      minutosParaHora(h.inicio)
-    )
+    horarios: horariosValidos
   };
 }

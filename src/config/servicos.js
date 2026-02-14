@@ -1,7 +1,7 @@
 export const SERVICOS = {
   cabelo: {
     nome: "Cabelo",
-    duracao: 50,
+    duracao: 40,
     preco: 25
   },
   barba: {
@@ -11,7 +11,7 @@ export const SERVICOS = {
   },
   sobrancelha: {
     nome: "Sobrancelha",
-    duracao: 10,
+    duracao: 0,
     preco: 15
   }
 };
