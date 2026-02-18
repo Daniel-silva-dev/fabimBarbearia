@@ -11,8 +11,8 @@ import { collection, addDoc, onSnapshot } from "firebase/firestore";
 import { db } from "./services/firebase";
 import { AuthProvider } from "./contexts/AuthContext";
 
-import Form from "./components/form";
-import Header from "./components/header";
+import Form from "./components/Form";
+import Header from "./components/Header";
 import Footer from "./components/Footer";
 import HeaderBar from "./components/HeaderBar";
 import Admin from "./pages/Admin";
