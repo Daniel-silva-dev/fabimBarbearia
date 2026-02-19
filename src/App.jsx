@@ -100,7 +100,7 @@ const obterHorarios = useCallback(
 
   return (
     <AuthProvider>
-      <BrowserRouter basename="/fabimBarbearia">
+      <BrowserRouter basename="/">
         <RedirectHandler />
 
         <Routes>
