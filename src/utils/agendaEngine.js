@@ -7,10 +7,10 @@ const FECHAMENTO = 20 * 60;
 
 const DOMINGO_FECHA = 12 * 60;
 
-const ALMOCO_INICIO1 = 12 * 60;
+const ALMOCO_INICIO = 12 * 60;
 const ALMOCO_FIM = 14 * 60;
 
-const ALMOCO_INICIO = ALMOCO_INICIO1 +20;
+const moreTime = 30
 
 function isDomingo(data) {
   return new Date(data + "T00:00:00").getDay() === 0;
@@ -35,12 +35,12 @@ export function gerarHorariosDisponiveis({
 
   const horarios = [];
 
-  for (let inicio = inicioDia; inicio + SLOT <= fimDia; inicio += SLOT) {
+  for (let inicio = inicioDia; inicio + SLOT <= fimDia + moreTime; inicio += SLOT) {
 
     const fim = inicio + SLOT;
 
     /* pausa almoço */
-    if (inicio < ALMOCO_FIM && fim > ALMOCO_INICIO) {
+    if (inicio < ALMOCO_FIM && fim >= ALMOCO_INICIO + moreTime) {
       continue;
     }
 
