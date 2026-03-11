@@ -1,82 +1,63 @@
-import { SERVICOS } from "../config/servicos";
-import { getRegrasDoDia } from "../config/funcionamento";
+import { minutosParaHora } from "./time";
 
-import { horaParaMinutos, minutosParaHora } from "./time";
+const SLOT = 50;
 
-function calcularDuracaoTotal(servicosSelecionados = []) {
-  return servicosSelecionados.reduce((total, chave) => {
-    return total + (SERVICOS[chave]?.duracao || 0);
-  }, 0);
+const ABERTURA = 8 * 60;
+const FECHAMENTO = 20 * 60;
+
+const ALMOCO_INICIO = 12 * 60;
+const ALMOCO_FIM = 14 * 60;
+
+function isDomingo(data) {
+  return new Date(data + "T00:00:00").getDay() === 0;
+}
+
+function isSegunda(data) {
+  return new Date(data + "T00:00:00").getDay() === 1;
 }
 
 export function gerarHorariosDisponiveis({
   data,
-  servicosSelecionados = [],
-  agendamentosDoDia = []
+  agendamentos = [],
+  segundaFechada = false
 }) {
 
-  const regras = getRegrasDoDia(data);
+  if (!data) return [];
 
-  if (!regras?.aberto) {
-    return {
-      fechado: true,
-      horarios: []
-    };
-  }
+  if (segundaFechada && isSegunda(data)) return [];
 
-  const duracaoTotal = calcularDuracaoTotal(servicosSelecionados);
+  const inicioExpediente = ABERTURA;
+  const fimExpediente = isDomingo(data) ? 12 * 60 : FECHAMENTO;
 
-  if (!duracaoTotal) {
-    return {
-      fechado: false,
-      horarios: []
-    };
-  }
-
-  const inicioDia = horaParaMinutos(regras.inicio);
-  const fimDia = horaParaMinutos(regras.fim);
-
-  const pausas = (regras.pausas || []).map(p => ({
-    inicio: horaParaMinutos(p.inicio),
-    fim: horaParaMinutos(p.fim)
-  }));
-
-  const ocupados = agendamentosDoDia.map(a => ({
-    inicio: a.inicioMinutos,
-    fim: a.fimMinutos
-  }));
-
-  const horariosValidos = [];
-
-  const BASE_INTERVALO = 20;
+  const horarios = [];
 
   for (
-    let inicio = inicioDia;
-    inicio + duracaoTotal <= fimDia;
-    inicio += BASE_INTERVALO
+    let inicio = inicioExpediente;
+    inicio + SLOT <= fimExpediente;
+    inicio += SLOT
   ) {
 
-    const fim = inicio + duracaoTotal;
+    const fim = inicio + SLOT;
 
-    // Verifica pausa
-    const invadePausa = pausas.some(p =>
-      inicio < p.fim && fim > p.inicio
-    );
-    if (invadePausa) continue;
+    // bloqueia almoço
+    if (inicio < ALMOCO_FIM && fim > ALMOCO_INICIO) continue;
 
-    // Verifica conflito
-    const conflito = ocupados.some(o =>
-      inicio < o.fim && fim > o.inicio
-    );
+    const conflito = agendamentos.some((ag) => {
+      const agInicio = ag.inicioMinutos;
+      const agFim = ag.fimMinutos;
+
+      return inicio < agFim && fim > agInicio;
+    });
+
     if (conflito) continue;
 
-    horariosValidos.push(
-      minutosParaHora(inicio)
-    );
+    horarios.push({
+      inicioMinutos: inicio,
+      fimMinutos: fim,
+      inicio: minutosParaHora(inicio),
+      fim: minutosParaHora(fim),
+    });
   }
 
-  return {
-    fechado: false,
-    horarios: horariosValidos
-  };
+  return horarios;
 }

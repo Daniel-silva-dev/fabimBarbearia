@@ -6,7 +6,14 @@ import {
   useNavigate,
   useLocation,
 } from "react-router-dom";
-import { collection, addDoc, onSnapshot } from "firebase/firestore";
+
+import {
+  collection,
+  onSnapshot,
+  doc,
+  setDoc,
+  getDoc
+} from "firebase/firestore";
 
 import { db } from "./services/firebase";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -57,27 +64,27 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-const obterHorarios = useCallback(
-  ({ data, servicosSelecionados }) => {
-    const agendamentosDoDia = lista.filter(
-      (item) =>
-        item.data === data &&
-        (item.status === "ativo" || item.status === "bloqueado")
-    );
+  const obterHorarios = useCallback(
+    ({ data, servicosSelecionados }) => {
+      const agendamentosDoDia = lista.filter(
+        (item) =>
+          item.data === data &&
+          (item.status === "ativo" || item.status === "bloqueado")
+      );
 
-    return gerarHorariosDisponiveis({
-      data,
-      servicosSelecionados,
-      agendamentos: agendamentosDoDia,
-      segundaFechada: false,
-    });
-  },
-  [lista]
-);
-
+      return gerarHorariosDisponiveis({
+        data,
+        servicosSelecionados,
+        agendamentos: agendamentosDoDia,
+        segundaFechada: false,
+      });
+    },
+    [lista]
+  );
 
   /* ➕ Criar novo agendamento */
   async function novoEvento(evento) {
+
     const conflito = lista.some(
       (item) =>
         item.data === evento.data &&
@@ -90,7 +97,21 @@ const obterHorarios = useCallback(
 
     if (conflito) return false;
 
-    await addDoc(collection(db, "agendamentos"), {
+    /* 🔑 ID único (impede duplicação) */
+    const horario = evento.horario || evento.inicio;
+    const barbeiro = evento.barbeiro || "default";
+
+    const id = `${evento.data}_${barbeiro}_${horario}`;
+
+    const ref = doc(db, "agendamentos", id);
+
+    const existe = await getDoc(ref);
+
+    if (existe.exists()) {
+      return false;
+    }
+
+    await setDoc(ref, {
       ...evento,
       status: "ativo",
     });

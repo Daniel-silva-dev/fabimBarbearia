@@ -1,14 +1,16 @@
 import { minutosParaHora } from "./time";
-import { SERVICOS } from "../config/servicos";
+
+const SLOT = 50;
 
 const ABERTURA = 8 * 60;
 const FECHAMENTO = 20 * 60;
 
-const BASE_INTERNA = 20;
-const INTERVALO = 5;
+const DOMINGO_FECHA = 12 * 60;
 
-const ALMOCO_INICIO = 12 * 60;
+const ALMOCO_INICIO1 = 12 * 60;
 const ALMOCO_FIM = 14 * 60;
+
+const ALMOCO_INICIO = ALMOCO_INICIO1 +20;
 
 function isDomingo(data) {
   return new Date(data + "T00:00:00").getDay() === 0;
@@ -18,16 +20,9 @@ function isSegunda(data) {
   return new Date(data + "T00:00:00").getDay() === 1;
 }
 
-function calcularDuracaoTotal(servicosSelecionados = []) {
-  return servicosSelecionados.reduce((total, chave) => {
-    return total + (SERVICOS[chave]?.duracao || 0);
-  }, 0);
-}
-
 export function gerarHorariosDisponiveis({
   data,
   agendamentos = [],
-  servicosSelecionados = [],
   segundaFechada = false
 }) {
 
@@ -35,44 +30,34 @@ export function gerarHorariosDisponiveis({
 
   if (segundaFechada && isSegunda(data)) return [];
 
-  const duracaoTotal = calcularDuracaoTotal(servicosSelecionados);
-  if (!duracaoTotal) return [];
-
-  const domingo = isDomingo(data);
-
-  const inicioExpediente = ABERTURA;
-  const fimExpediente = domingo ? 12 * 60 : FECHAMENTO;
+  const inicioDia = ABERTURA;
+  const fimDia = isDomingo(data) ? DOMINGO_FECHA : FECHAMENTO;
 
   const horarios = [];
 
-  for (
-    let inicio = inicioExpediente;
-    inicio + duracaoTotal <= fimExpediente;
-    inicio += BASE_INTERNA
-  ) {
+  for (let inicio = inicioDia; inicio + SLOT <= fimDia; inicio += SLOT) {
 
-    const fim = inicio + duracaoTotal;
+    const fim = inicio + SLOT;
 
-    // Bloqueia almoço
-    if (inicio < ALMOCO_FIM && fim > ALMOCO_INICIO) continue;
+    /* pausa almoço */
+    if (inicio < ALMOCO_FIM && fim > ALMOCO_INICIO) {
+      continue;
+    }
 
-    // Verifica conflito (considerando intervalo)
-    const conflito = agendamentos.some((ag) => {
-      const agInicio = ag.inicioMinutos;
-      const agFim = ag.fimMinutos + INTERVALO;
-
-      return inicio < agFim && fim > agInicio;
-    });
+    /* conflito com agendamento */
+    const conflito = agendamentos.some(a =>
+      inicio < a.fimMinutos && fim > a.inicioMinutos
+    );
 
     if (conflito) continue;
-    if ((inicio - inicioExpediente) % duracaoTotal !== 0) continue;
 
     horarios.push({
       inicioMinutos: inicio,
       fimMinutos: fim,
       inicio: minutosParaHora(inicio),
-      fim: minutosParaHora(fim),
+      fim: minutosParaHora(fim)
     });
+
   }
 
   return horarios;
